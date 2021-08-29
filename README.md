@@ -12,3 +12,10 @@
 <img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/sample5.png" width="350" height="230"/>  <img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/sample6.png" width="350" height="230"/>
 
 <img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/sample7.png" width="350" height="230"/>  <img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/sample8.png" width="350" height="230"/>
+
+
+### 代码细节
+
+- 源码训练voc2012数据: /official_mask_rcnn/samples/voc/voc2012.py
+- 复现代码: /mrcnn
+- 数据生成: /data/generate_voc_segment_data.py
