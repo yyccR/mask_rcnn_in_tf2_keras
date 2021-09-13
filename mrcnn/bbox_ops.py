@@ -1,5 +1,7 @@
 
 import cv2
+import skimage
+import skimage.transform
 import numpy as np
 import tensorflow as tf
 
@@ -208,7 +210,15 @@ def unmold_mask(mask, bbox, image_shape):
     """
     threshold = 0.5
     y1, x1, y2, x2 = bbox
-    mask = cv2.resize(mask, (x2 - x1,y2 - y1))
+    y1 = int(y1)
+    x1 = int(x1)
+    y2 = int(y2)
+    x2 = int(x2)
+    # mask = cv2.resize(mask, (x2 - x1,y2 - y1))
+    mask = skimage.transform.resize(mask, (y2 - y1, x2 - x1),
+                                              order=1, mode='constant', cval=0, clip=True,
+                                              preserve_range=False, anti_aliasing=False,
+                                              anti_aliasing_sigma=None)
     mask = np.where(mask >= threshold, 1, 0).astype(np.bool)
 
     # Put the mask in the right location.

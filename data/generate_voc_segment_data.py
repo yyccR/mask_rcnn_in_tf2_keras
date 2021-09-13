@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("../../mask_rcnn_in_tf2_keras")
+sys.path.append("../../detector_in_keras")
 
 import os
 import math
@@ -10,6 +10,101 @@ import matplotlib.pyplot as plt
 import numpy as np
 from data.xml_ops import xml2dict
 from PIL import Image
+import tensorflow as tf
+from mrcnn.layers import build_rpn_targets
+from mrcnn.anchors_ops import get_anchors
+
+# class FitGenerator(tf.keras.utils.Sequence):
+#     def __init__(self,
+#                  voc_data_path,
+#                  classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
+#                           'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
+#                           'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'],
+#                  is_training=True,
+#                  batch_size=2,
+#                  im_size=640,
+#                  max_instance=100,
+#                  data_max_size_per_class=150,
+#                  use_mini_mask=True,
+#                  mini_mask_shape=(56,56),
+#                  anchor_scalse = [32, 64, 128, 256, 512],
+#                  anchor_ratios =[0.5, 1, 2],
+#                  anchor_feature_strides=1,
+#                  anchor_stride=[4, 8, 16, 32, 64],
+#                  rpn_train_anchors_per_image=256,
+#                  rpn_bbox_std_dev=np.array([0.1, 0.1, 0.2, 0.2])
+#                  ):
+#         self.voc_data_path = voc_data_path
+#         self.classes = classes
+#         self.is_training = is_training
+#         self.batch_size = batch_size
+#         self.im_size = im_size
+#         self.max_instance = max_instance
+#         self.data_max_size_per_class = data_max_size_per_class
+#         self.use_mini_mask = use_mini_mask
+#         self.mini_mask_shape = mini_mask_shape
+#         self.anchor_scalse = anchor_scalse
+#         self.anchor_ratios = anchor_ratios
+#         self.anchor_feature_strides = anchor_feature_strides
+#         self.anchor_stride = anchor_stride
+#         self.rpn_train_anchors_per_image = rpn_train_anchors_per_image
+#         self.rpn_bbox_std_dev = rpn_bbox_std_dev
+#
+#         self.generator = VocSegmentDataGenerator(
+#             voc_data_path=voc_data_path,
+#             classes=classes,
+#             is_training=is_training,
+#             batch_size=batch_size,
+#             im_size=im_size,
+#             max_instance=max_instance,
+#             data_max_size_per_class=data_max_size_per_class,
+#             use_mini_mask=use_mini_mask,
+#             mini_mask_shape=mini_mask_shape
+#         )
+#         anchors = get_anchors(image_shape=[im_size, im_size],
+#                               scales=anchor_scalse,
+#                               # scales=[192],
+#                               ratios=anchor_ratios,
+#                               feature_strides=anchor_feature_strides,
+#                               # feature_strides=[16],
+#                               anchor_stride=anchor_stride)
+#         self.all_anchors = np.stack([anchors, anchors], axis=0)
+#
+#     def __len__(self):
+#         return self.generator.total_batch_size
+#
+#     def on_epoch_end(self):
+#         self.generator._on_epoch_end()
+#         self.generator._balance_class_data()
+#
+#     def __getitem__(self, idx):
+#         indices = self.generator.file_indices[idx * self.batch_size: (idx + 1) * self.batch_size]
+#         # cur_img_files = ["../../data/VOCdevkit/VOC2012/JPEGImages/2007_000243.jpg","../../data/VOCdevkit/VOC2012/JPEGImages/2007_000243.jpg"]
+#         # cur_cls_files = ["../../data/VOCdevkit/VOC2012/SegmentationClass/2007_000243.png","../../data/VOCdevkit/VOC2012/SegmentationClass/2007_000243.png"]
+#         # cur_obj_files = ["../../data/VOCdevkit/VOC2012/SegmentationObject/2007_000243.png","../../data/VOCdevkit/VOC2012/SegmentationObject/2007_000243.png"]
+#         cur_img_files = [self.generator.img_files[k] for k in indices]
+#         cur_cls_files = [self.generator.cls_mask_files[k] for k in indices]
+#         cur_obj_files = [self.generator.obj_mask_files[k] for k in indices]
+#         # print(cur_img_files)
+#         # print(cur_cls_files)
+#         # print(cur_obj_files)
+#         imgs, masks, gt_boxes, labels = self.generator._data_generation(img_files=cur_img_files,
+#                                                               cls_files=cur_cls_files,
+#                                                               obj_files=cur_obj_files)
+#         rpn_target_match, rpn_target_box = build_rpn_targets(self.all_anchors[0],
+#                                                              gt_boxes,
+#                                                              [self.im_size,self.im_size],
+#                                                              self.batch_size,
+#                                                              self.rpn_train_anchors_per_image,
+#                                                              self.rpn_bbox_std_dev)
+#         # print(np.shape(imgs))
+#         # print(np.shape(gt_boxes))
+#         # print(np.shape(labels))
+#         # print(np.shape(masks))
+#         # print(np.shape(self.all_anchors))
+#         # print(np.shape(rpn_target_match))
+#         # print(np.shape(rpn_target_box))
+#         return [imgs, gt_boxes, labels, masks, self.all_anchors, rpn_target_match, rpn_target_box], [np.array([])] * 16
 
 
 class VocSegmentDataGenerator:
@@ -20,11 +115,13 @@ class VocSegmentDataGenerator:
                           'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'],
                  is_training=True,
                  batch_size=2,
-                 im_size=600,
+                 im_size=640,
                  max_instance=100,
                  data_max_size_per_class=150,
                  use_mini_mask=True,
-                 mini_mask_shape=(56,56)):
+                 mini_mask_shape=(56,56),
+                 class_balance=True,
+                 image_mean = np.array([[[102.9801, 115.9465, 122.7717]]])):
         self.voc_data_path = voc_data_path
         self.classes = classes
         self.num_class = len(classes)
@@ -38,6 +135,8 @@ class VocSegmentDataGenerator:
         self.data_max_size_per_class = data_max_size_per_class
         self.use_mini_mask = use_mini_mask
         self.mini_mask_shape = mini_mask_shape
+        self.class_balance = class_balance
+        self.image_mean = image_mean
 
         # 加载文件
         self.total_batch_size = 0
@@ -48,7 +147,8 @@ class VocSegmentDataGenerator:
         self.anno_files = []
         self.file_indices = []
         self.__load_files()
-        self.__balance_class_data()
+        if self.class_balance:
+            self._balance_class_data()
 
     def _generate_color_list(self, N, normalized=False):
         """生成voc颜色数组"""
@@ -178,7 +278,7 @@ class VocSegmentDataGenerator:
         self.total_batch_size = int(math.floor(len(self.img_files) / self.batch_size))
         self.file_indices = np.arange(len(self.img_files))
 
-    def __balance_class_data(self):
+    def _balance_class_data(self):
         """ 平衡每个类别样本数 """
 
         # self.file_indices = np.arange(len(self.anno_files))
@@ -255,8 +355,6 @@ class VocSegmentDataGenerator:
                 num_obj += 1
             objs_per_img.append(num_obj)
 
-
-
         cls_counter = Counter(clss)
         keys = list(Counter(cls_counter).keys())
         values = list(Counter(cls_counter).values())
@@ -325,7 +423,8 @@ class VocSegmentDataGenerator:
         if self.current_batch_index >= self.total_batch_size:
             self.current_batch_index = 0
             self._on_epoch_end()
-            self.__balance_class_data()
+            if self.class_balance:
+                self._balance_class_data()
 
         indices = self.file_indices[self.current_batch_index * self.batch_size:
                                     (self.current_batch_index + 1) * self.batch_size]
@@ -335,9 +434,9 @@ class VocSegmentDataGenerator:
         cur_img_files = [self.img_files[k] for k in indices]
         cur_cls_files = [self.cls_mask_files[k] for k in indices]
         cur_obj_files = [self.obj_mask_files[k] for k in indices]
-        print(cur_img_files)
-        print(cur_cls_files)
-        print(cur_obj_files)
+        # print(cur_img_files)
+        # print(cur_cls_files)
+        # print(cur_obj_files)
         imgs, masks, gt_boxes, labels = self._data_generation(img_files=cur_img_files,
                                                               cls_files=cur_cls_files,
                                                               obj_files=cur_obj_files)
@@ -349,7 +448,10 @@ class VocSegmentDataGenerator:
         :param img_files:
         :param cls_files:
         :param obj_files:
-        :return:
+        :return: imgs - self.image_mean: [batch, h, w, 3]
+                 masks: [batch, h, w, max_instances]
+                 gt_boxes: [batch, max_instances, 4]
+                 labels: [batch, max_instances]
         """
         imgs = []
         labels = []
@@ -399,7 +501,7 @@ class VocSegmentDataGenerator:
         gt_boxes = np.array(gt_boxes, dtype=np.float32)
         labels = np.array(labels, dtype=np.int8)
 
-        return imgs - np.array([[[102.9801, 115.9465, 122.7717]]]), masks, gt_boxes, labels
+        return imgs - self.image_mean, masks, gt_boxes, labels
 
     def _resize_im(self, origin_im, mask_im):
         """ 对图片/mask/box resize
