@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("../../detector_in_keras")
+sys.path.append("../../mask_rcnn_in_tf2_keras")
 
 import os
 import math
@@ -325,6 +325,7 @@ class VocSegmentDataGenerator:
 
     def check_mask_obj_class(self):
         """ 检查训练的mask目标样本分布情况 """
+        print("data analysis figure in ./tmp !")
         clss = []
         areas = []
         objs_per_img = []
@@ -570,19 +571,18 @@ if __name__ == "__main__":
     from PIL import Image
     from data.visual_ops import draw_instance
 
-    vsg = VocSegmentDataGenerator("./VOCdevkit/VOC2012", batch_size=2)
+    vsg = VocSegmentDataGenerator("./voc2012_46_samples", batch_size=2, use_mini_mask=False)
     # vsg.check_mask_obj_class()
     imgs, masks, gt_boxes, labels = vsg.next_batch()
     # print(np.shape(masks),np.shape(gt_boxes),np.shape(labels))
-    # cv2.imshow('', np.array(masks[2,:,:,0] * 255,dtype=np.uint8))
+    # cv2.imshow('', np.array(masks[0,:,:,0] * 255,dtype=np.uint8))
     # cv2.waitKey(0)
-    # active_num = len(np.where(labels)[1])
-    # # img = np.array(imgs[0],dtype=np.uint8)
-    # mask = masks[1]
-    # img_mask = draw_instance(imgs[1], mask[:,:,:active_num])
+    active_num = len(np.where(labels)[1])
+    img = np.array(imgs[0], dtype=np.uint8) + vsg.image_mean
+    mask = masks[0]
+    img_mask = draw_instance(img, mask[:,:,:active_num])
     # img_mask = np.array(img_mask, dtype=np.uint8)
     # # im = Image.fromarray(img_mask[:,:,::-1])
     # # im.show()
-    # cv2.imshow("",img_mask)
-    # cv2.waitKey(0)
-
+    cv2.imshow("",img_mask)
+    cv2.waitKey(0)

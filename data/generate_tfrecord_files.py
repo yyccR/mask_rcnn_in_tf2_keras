@@ -44,13 +44,13 @@ def float_feature_list(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
-def generate_voc_segment_tfrecord(is_training=True, tfrec_path='./voc_tfrec/'):
+def generate_voc_segment_tfrecord(is_training=True, tfrec_path='./voc_tfrec/', voc_data_path='./voc2012_46_samples'):
     from data.generate_voc_segment_data import VocSegmentDataGenerator
-    from models.mask_rcnn.layers import build_rpn_targets
-    from models.mask_rcnn.anchors_ops import get_anchors
+    from mrcnn.layers import build_rpn_targets
+    from mrcnn.anchors_ops import get_anchors
 
     voc_seg = VocSegmentDataGenerator(
-        voc_data_path='./VOCdevkit/VOC2012/',
+        voc_data_path=voc_data_path,
         batch_size=1,
         class_balance=True,
         is_training=is_training,
@@ -121,7 +121,7 @@ def parse_single_example(single_record):
     return image, masks, gt_boxes, labels,rpn_target_match,rpn_target_box
 
 
-def parse_voc_segment_tfrecord(is_training=True, tfrec_path='./voc_tfrec', repeat=10, shuffle_buffer=1000, batch=2):
+def parse_voc_segment_tfrecord(is_training=True, tfrec_path='./voc_tfrec', repeat=1, shuffle_buffer=1000, batch=2):
     if is_training:
         tfrec_file = os.path.join(tfrec_path, "voc_train_seg.tfrec")
     else:
@@ -132,7 +132,7 @@ def parse_voc_segment_tfrecord(is_training=True, tfrec_path='./voc_tfrec', repea
         .repeat(repeat)\
         .shuffle(shuffle_buffer)\
         .map(parse_single_example)\
-        .batch(batch)\
+        .batch(batch, drop_remainder=True)\
         .prefetch(10)
 
     return parse_data
