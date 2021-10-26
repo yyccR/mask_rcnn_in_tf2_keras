@@ -23,13 +23,13 @@
 
 ### 训练`Voc2012`数据
 
-- 1. 生成tfrecord训练数据, `/data/voc2012_46_samples`下是从voc数据随便挑选的46张, 生成的.tfrec数据保存在`/data/voc_tfrec`下
+1. 生成tfrecord训练数据, `/data/voc2012_46_samples`下是从voc数据随便挑选的46张, 生成的.tfrec数据保存在`/data/voc_tfrec`下
 ```python
 cd data
 python3 generate_tfrecord_files.py
 ```
 
-- 2. 构建模型
+2. 构建模型
 ```python
 from mrcnn.mask_rcnn import MaskRCNN
 mrcnn = MaskRCNN(classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
@@ -39,20 +39,20 @@ mrcnn = MaskRCNN(classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat'
                  batch_size=2)
 ```
 
-- 3. 训练
+3. 训练
 ```python
 mrcnn.train_with_tfrecord(epochs=300, log_dir='./logs', tfrec_path='../data/voc_tfrec')
 ```
 
-- 4. tensorboard查看效果
+4. tensorboard查看效果
 ```python
 tensorboard --host 0.0.0.0 --logdir ./logs/ --port 9013 --samples_per_plugin=images=40
 ```
 
-- 5. 浏览器打开: `http://127.0.0.1:9013`
+5. 浏览器打开: `http://127.0.0.1:9013`
 
 ### 测试
-- 1. 构建模型
+1. 构建模型
 ```python
 from mrcnn.mask_rcnn import MaskRCNN
 mrcnn = MaskRCNN(classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
@@ -63,13 +63,13 @@ mrcnn = MaskRCNN(classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat'
                  image_shape=[640,640,3])
 ```
 
-- 2. 加载权重
+2. 加载权重
 ```python
 model_path = './mrcnn/mrcnn-epoch-300.h5'
 mrcnn.load_weights(model_path, by_name=True)
 ```
 
-- 3. 测试, 在`/tmp`目录下可以看到检测结果保存的图片
+3. 测试, 在`/tmp`目录下可以看到检测结果保存的图片
 ```python
 import cv2
 import numpy as np
