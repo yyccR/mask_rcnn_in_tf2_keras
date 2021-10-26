@@ -59,7 +59,7 @@ def rpn_class_loss(rpn_match, rpn_class_logits):
     loss = tf.keras.backend.switch(tf.size(loss) > 0, tf.keras.backend.mean(loss), tf.constant(0.0))
     return loss
 
-from models.mask_rcnn.anchors_ops import get_anchors
+
 def rpn_bbox_loss(target_bbox, rpn_match, predict_bbox):
     """ 计算rpn预测的box损失
 
