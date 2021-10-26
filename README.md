@@ -51,6 +51,11 @@ tensorboard --host 0.0.0.0 --logdir ./logs/ --port 9013 --samples_per_plugin=ima
 
 5. 浏览器打开: `http://127.0.0.1:9013`
 
+<img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/scalar.png" width="800" height="600"/>  
+
+<img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/images.png" width="800" height="600"/>
+
+
 ### 测试
 1. 构建模型
 ```python
