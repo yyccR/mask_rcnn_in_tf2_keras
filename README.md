@@ -1,5 +1,8 @@
 ## Mask RCNN in tf2-keras
 
+### bilibili讲解视频
+<iframe src="//player.bilibili.com/player.html?aid=334804625&bvid=BV1qA411w7Zg&cid=387247153&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
 ### requirements
 
 - tensorflow-gpu >= 2.1.0
