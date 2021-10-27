@@ -2,7 +2,7 @@
 
 ### bilibili讲解视频
 
-[![Watch the video](https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/mask_rcnn封面.png)](https://www.bilibili.com/video/BV1qA411w7Zg?share_source=copy_web)
+[![Watch the video](https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/b站视频页.png)](https://www.bilibili.com/video/BV1qA411w7Zg?share_source=copy_web)
 
 ### requirements
 
