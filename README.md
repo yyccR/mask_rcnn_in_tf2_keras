@@ -60,7 +60,7 @@ tensorboard --host 0.0.0.0 --logdir ./logs/ --port 9013 --samples_per_plugin=ima
 <img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/images.png" width="800" height="437"/>
 
 
-### 测试
+### 测试`Voc2012`
 1. 构建模型
 ```python
 from mrcnn.mask_rcnn import MaskRCNN
@@ -74,7 +74,7 @@ mrcnn = MaskRCNN(classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat'
 
 2. 加载权重
 ```python
-model_path = './mrcnn/mrcnn-epoch-300.h5'
+model_path = '.h5 file path'
 mrcnn.load_weights(model_path, by_name=True)
 ```
 
@@ -96,7 +96,16 @@ image = np.stack([image], axis=0)
 boxes,class_ids,scores,masks = mrcnn.predict(image=image, anchors=anchors, draw_detect_res_figure=True)
 ```
 
+### 训练自己的数据
+1. 自定义自己的generator, 参考 `./data/generate_voc_segment_data.py`, 其`self.next_batch`方法输出每个batch数据, 格式为：
+- imgs - self.image_mean, shape = [batch, h, w, 3]
+- masks, shape = [batch, h, w, max_instances]
+- gt_boxes: shape = [batch, max_instances, 4]
+- labels: shape = [batch, max_instances]
 
+2. 修改`generate_tfrecord_files.py`, 替换 `voc_seg = VocSegmentDataGenerator(*)` 为上面你定义的generator类.
+3. 模型启动和训练流程和上文`Voc2012`训练一样
+4. 模型测试只需要修改对应类别即可.
 
 ### 代码细节
 
