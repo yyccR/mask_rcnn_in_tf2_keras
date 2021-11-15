@@ -1,7 +1,4 @@
 import sys
-
-sys.path.append("../../detector_in_keras")
-
 import os
 import tensorflow as tf
 import numpy as np
@@ -48,6 +45,9 @@ def generate_voc_segment_tfrecord(is_training=True, tfrec_path='./voc_tfrec/', v
     from data.generate_voc_segment_data import VocSegmentDataGenerator
     from mrcnn.layers import build_rpn_targets
     from mrcnn.anchors_ops import get_anchors
+
+    if not os.path.isdir(tfrec_path):
+        os.mkdir(tfrec_path)
 
     voc_seg = VocSegmentDataGenerator(
         voc_data_path=voc_data_path,
