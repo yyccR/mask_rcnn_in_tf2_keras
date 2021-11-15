@@ -27,13 +27,7 @@
 
 ### 训练`Voc2012`数据
 
-1. 生成tfrecord训练数据, `/data/voc2012_46_samples`下是从voc数据随便挑选的46张, 生成的.tfrec数据保存在`/data/voc_tfrec`下
-```python
-cd data
-python3 generate_tfrecord_files.py
-```
-
-2. 构建模型
+1. 构建模型
 ```python
 from mrcnn.mask_rcnn import MaskRCNN
 mrcnn = MaskRCNN(classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
@@ -43,17 +37,17 @@ mrcnn = MaskRCNN(classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat'
                  batch_size=2)
 ```
 
-3. 训练
+2. 训练
 ```python
-mrcnn.train_with_tfrecord(epochs=300, log_dir='./logs', tfrec_path='../data/voc_tfrec')
+mrcnn.train(epochs=300, log_dir='./logs', data_path='../data/voc2012_46_samples')```
 ```
 
-4. tensorboard查看效果
+3. tensorboard查看效果
 ```python
 tensorboard --host 0.0.0.0 --logdir ./logs/ --port 9013 --samples_per_plugin=images=40
 ```
 
-5. 浏览器打开: `http://127.0.0.1:9013`
+4. 浏览器打开: `http://127.0.0.1:9013`
 
 <img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/scalar.png" width="800" height="437"/>  
 
