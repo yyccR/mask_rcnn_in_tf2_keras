@@ -580,7 +580,7 @@ class MaskRCNN:
                             original_image_shape=self.image_shape)
 
                         # 预测结果
-                        pred_img = imgs[i].numpy().copy() + self.pixel_mean
+                        pred_img = imgs[i].copy() + self.pixel_mean
                         for j in range(np.shape(class_ids)[0]):
                             score = scores[j]
                             if score > 0.1:
@@ -591,7 +591,7 @@ class MaskRCNN:
                                 pred_img = draw_bounding_box(pred_img, class_name, score, xmin, ymin, xmax, ymax)
 
                         # ground true
-                        gt_img = imgs[i].numpy().copy() + self.pixel_mean
+                        gt_img = imgs[i].copy() + self.pixel_mean
                         active_num = len(np.where(labels[i])[0])
                         for j in range(active_num):
                             l = labels[i][j]
