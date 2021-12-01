@@ -10,10 +10,15 @@ ROOT_DIR = os.path.abspath("../../../")
 
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
-from mrcnn.config import Config
-from mrcnn import utils
-from xml_ops import xml2dict
+
 from PIL import Image
+import matplotlib
+import matplotlib.pyplot as plt
+
+from official_mask_rcnn.mrcnn.config import Config
+from official_mask_rcnn.mrcnn import utils
+from xml_ops import xml2dict
+
 
 class Voc2012Config(Config):
     # Give the configuration a recognizable name
@@ -261,10 +266,20 @@ class Voc2012Dataset(utils.Dataset):
                         })
         return objs_mask_cls_bdbox
 
+def get_ax(rows=1, cols=1, size=8):
+    """Return a Matplotlib Axes array to be used in
+    all visualizations in the notebook. Provide a
+    central point to control graph sizes.
+
+    Change the default size attribute to control the size
+    of rendered images
+    """
+    _, ax = plt.subplots(rows, cols, figsize=(size*cols, size*rows))
+    return ax
 
 if __name__ == '__main__':
-    from mrcnn import visualize
-    import mrcnn.model as modellib
+    from official_mask_rcnn.mrcnn import visualize
+    import official_mask_rcnn.mrcnn.model as modellib
     import os
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
@@ -272,11 +287,11 @@ if __name__ == '__main__':
     vc.display()
 
     dataset_train = Voc2012Dataset()
-    dataset_train.load_voc2012(voc_data_root_path='../../VOCdevkit/VOC2012', is_training=True)
+    dataset_train.load_voc2012(voc_data_root_path='../../../data/voc2012_46_samples', is_training=True)
     dataset_train.prepare()
 
     dataset_val = Voc2012Dataset()
-    dataset_val.load_voc2012(voc_data_root_path='../../VOCdevkit/VOC2012', is_training=False)
+    dataset_val.load_voc2012(voc_data_root_path='../../../data/voc2012_46_samples', is_training=False)
     dataset_val.prepare()
 
     image_ids = np.random.choice(dataset_train.image_ids, 4)
