@@ -78,7 +78,7 @@ import cv2
 import numpy as np
 from mrcnn.anchors_ops import get_anchors
 anchors = get_anchors(image_shape=mrcnn.image_shape,
-                      scales=selmrcnnf.scales,
+                      scales=mrcnn.scales,
                       ratios=mrcnn.ratios,
                       feature_strides=mrcnn.feature_strides,
                       anchor_stride=mrcnn.anchor_stride)

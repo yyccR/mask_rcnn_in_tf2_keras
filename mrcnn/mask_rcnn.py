@@ -756,7 +756,7 @@ class MaskRCNN:
                               ratios=self.ratios,
                               feature_strides=self.feature_strides,
                               anchor_stride=self.anchor_stride)
-        all_anchors = np.stack([anchors, anchors], axis=0)
+        all_anchors = np.stack([anchors] * self.batch_size, axis=0)
 
         step = 0
         for imgs, masks, gt_boxes, labels, rpn_target_match, rpn_target_box in vsg_train:
