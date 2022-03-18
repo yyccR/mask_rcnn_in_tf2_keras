@@ -499,7 +499,8 @@ class MaskRCNN:
                               ratios=self.ratios,
                               feature_strides=self.feature_strides,
                               anchor_stride=self.anchor_stride)
-        all_anchors = np.stack([anchors, anchors], axis=0)
+        # all_anchors = np.stack([anchors, anchors], axis=0)
+        all_anchors = np.tile([anchors], reps=[self.batch_size, 1, 1])
         # tensorboard 日志目录
         summary_writer = tf.summary.create_file_writer(log_dir)
 
@@ -607,7 +608,6 @@ class MaskRCNN:
                         summ_imgs = tf.cast(summ_imgs, dtype=tf.uint8)
                         with summary_writer.as_default():
                             tf.summary.image("imgs/gt,pred,epoch{}".format(epoch), summ_imgs, step=batch)
-
 
     def train_with_tfrecord(self, epochs, log_dir, tfrec_path):
         """ 预先将数据处理成tfrecord格式，再进行训练，速度可以快很多
@@ -837,7 +837,8 @@ if __name__ == "__main__":
                               'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
                               'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'],
                      is_training=True,
-                     batch_size=2
+                     batch_size=1,
+                     image_shape=[320,320,3]
                      )
     # mrcnn = MaskRCNN(classes=['_background_', 'aeroplane'],
     #                  voc_data_path='../../data/VOCdevkit/VOC2012/'
