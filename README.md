@@ -27,27 +27,17 @@
 
 ### 训练`Voc2012`数据
 
-1. 构建模型
+1. 训练
 ```python
-from mrcnn.mask_rcnn import MaskRCNN
-mrcnn = MaskRCNN(classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-                              'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-                              'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'],
-                 is_training=True,
-                 batch_size=2)
+python3 mask_rcnn.py
 ```
 
-2. 训练
-```python
-mrcnn.train(epochs=300, log_dir='./logs', data_path='../data/voc2012_46_samples')```
-```
-
-3. tensorboard查看效果
+2. tensorboard查看效果
 ```python
 tensorboard --host 0.0.0.0 --logdir ./logs/ --port 9013 --samples_per_plugin=images=40
 ```
 
-4. 浏览器打开: `http://127.0.0.1:9013`
+3. 浏览器打开: `http://127.0.0.1:9013`
 
 <img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/scalar.png" width="800" height="437"/>  
 
