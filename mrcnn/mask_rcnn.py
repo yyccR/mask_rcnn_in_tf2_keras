@@ -817,7 +817,9 @@ class MaskRCNN:
 
             # 检测结果保存图片
             if draw_detect_res_figure:
-                pred_img = image[i].numpy().copy() + self.pixel_mean
+                if not os.path.isdir("../data/tmp"):
+                    os.mkdir("../data/tmp")
+                pred_img = image[i].copy() + self.pixel_mean
                 for j in range(np.shape(class_ids)[0]):
                     score = scores[j]
                     if score > 0.5:

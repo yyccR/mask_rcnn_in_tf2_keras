@@ -75,9 +75,10 @@ anchors = get_anchors(image_shape=mrcnn.image_shape,
 all_anchors = np.stack([anchors], axis=0)
 
 image = cv2.imread("image_path")
+image = cv2.resize(image, (mrcnn.image_shape[0], mrcnn.image_shape[1]))
 image = np.stack([image], axis=0)
 
-boxes,class_ids,scores,masks = mrcnn.predict(image=image, anchors=anchors, draw_detect_res_figure=True)
+boxes,class_ids,scores,masks = mrcnn.predict(image=image, anchors=all_anchors, draw_detect_res_figure=True)
 ```
 
 ### 训练自己的数据
