@@ -263,7 +263,7 @@ class CoCoDataGenrator:
 if __name__ == "__main__":
     from data.visual_ops import draw_bounding_box, draw_instance
 
-    file = "./coco2017/annotations/instances_val2017.json"
+    file = "./coco2017/instances_val2017.json"
     coco = CoCoDataGenrator(coco_annotation_file=file, include_mask=True, include_keypoint=False, batch_size=5)
     data = coco.next_batch()
     gt_imgs = data['imgs']
