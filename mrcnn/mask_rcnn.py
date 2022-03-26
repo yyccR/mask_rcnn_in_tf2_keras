@@ -81,7 +81,7 @@ class MaskRCNN:
         self.pixel_mean = pixel_mean
 
         self.base_model = Resnet()
-        self.mrcnn = self.build_graph(is_training=is_training)
+        self.model = self.build_graph(is_training=is_training)
 
     def _backbone(self, input_images):
         # [1/4, 1/4, 1/8, 1/16, 1/32]
@@ -463,8 +463,8 @@ class MaskRCNN:
 
             # In multi-GPU training, we wrap the model. Get layers
             # of the inner model because they have the weights.
-            layers = self.mrcnn.inner_model.layers if hasattr(self.mrcnn, "inner_model") \
-                else self.mrcnn.layers
+            layers = self.model.inner_model.layers if hasattr(self.model, "inner_model") \
+                else self.model.layers
 
             # Exclude some layers
             if exclude:
@@ -474,140 +474,6 @@ class MaskRCNN:
                 hdf5_format.load_weights_from_hdf5_group_by_name(f, layers)
             else:
                 hdf5_format.load_weights_from_hdf5_group(f, layers)
-
-    def train(self, epochs, log_dir, data_path):
-        """ 边生成数据边训练, 不用tf record格式
-
-        :param epochs
-        :param log_dir
-        :param tfrec_path: tfrecord 数据路径
-        """
-
-        vsg_train = VocSegmentDataGenerator(
-            voc_data_path=data_path,
-            batch_size=self.batch_size,
-            class_balance=True,
-            is_training=self.is_training,
-            im_size=self.image_shape[0],
-            data_max_size_per_class=2
-        )
-
-        mrcnn = self.mrcnn
-        optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
-        anchors = get_anchors(image_shape=self.image_shape,
-                              scales=self.scales,
-                              ratios=self.ratios,
-                              feature_strides=self.feature_strides,
-                              anchor_stride=self.anchor_stride)
-        # all_anchors = np.stack([anchors, anchors], axis=0)
-        all_anchors = np.tile([anchors], reps=[self.batch_size, 1, 1])
-        # tensorboard 日志目录
-        summary_writer = tf.summary.create_file_writer(log_dir)
-
-        for epoch in range(epochs):
-            for batch in range(vsg_train.total_batch_size):
-                imgs, masks, gt_boxes, labels = vsg_train.next_batch()
-                rpn_target_match, rpn_target_box = build_rpn_targets(
-                    anchors=anchors,
-                    gt_boxes=gt_boxes,
-                    image_shape=self.image_shape[0:2],
-                    batch_size=self.batch_size,
-                    rpn_train_anchors_per_image=self.rpn_train_anchors_per_image,
-                    rpn_bbox_std_dev=self.rpn_bbox_std_dev)
-
-                print(np.shape(imgs))
-                print(np.shape(masks))
-                print(np.shape(gt_boxes))
-                print("-------{}-{}--------".format(epoch, batch))
-
-                if np.sum(gt_boxes) <= 0.:
-                    print(batch, " gt_boxes: ", gt_boxes)
-                    continue
-
-                if epoch % 20 == 0 and epoch != 0:
-                    mrcnn.save_weights("./mrcnn-epoch-{}.h5".format(epoch))
-
-                with tf.GradientTape() as tape:
-                    # 模型输出
-                    # rpn_target_match, rpn_target_box, rpn_class_logits, rpn_class, rpn_bbox_delta, rois, \
-                    rpn_class_logits, rpn_class, rpn_bbox_delta, rois, \
-                    mrcnn_target_class_ids, mrcnn_target_bbox, mrcnn_target_mask, mrcnn_class_logits, \
-                    mrcnn_class, mrcnn_bbox, mrcnn_mask = \
-                        mrcnn([imgs, gt_boxes, labels, masks, all_anchors], training=True)
-                    # mrcnn([imgs, gt_boxes, labels, masks, all_anchors], training=True)
-
-                    # 计算损失
-                    rpn_c_loss = rpn_class_loss(rpn_target_match, rpn_class_logits)
-                    rpn_b_loss = rpn_bbox_loss(rpn_target_box, rpn_target_match, rpn_bbox_delta)
-                    mrcnn_c_loss = mrcnn_class_loss(mrcnn_target_class_ids, mrcnn_class_logits, rois)
-                    mrcnn_b_loss = mrcnn_bbox_loss(mrcnn_target_bbox, mrcnn_target_class_ids, mrcnn_bbox, rois)
-                    mrcnn_m_bc_loss = mrcnn_mask_loss(mrcnn_target_mask, mrcnn_target_class_ids, mrcnn_mask, rois)
-                    total_loss = rpn_c_loss + rpn_b_loss + mrcnn_c_loss + mrcnn_b_loss + mrcnn_m_bc_loss
-
-                    # 梯度更新
-                    grad = tape.gradient(total_loss, mrcnn.trainable_variables)
-                    optimizer.apply_gradients(zip(grad, mrcnn.trainable_variables))
-
-                    # tensorboard 损失曲线
-                    with summary_writer.as_default():
-                        tf.summary.scalar('loss/rpn_class_loss', rpn_c_loss,
-                                          step=epoch * vsg_train.total_batch_size + batch)
-                        tf.summary.scalar('loss/rpn_bbox_loss', rpn_b_loss,
-                                          step=epoch * vsg_train.total_batch_size + batch)
-                        tf.summary.scalar('loss/mrcnn_class_loss', mrcnn_c_loss,
-                                          step=epoch * vsg_train.total_batch_size + batch)
-                        tf.summary.scalar('loss/mrcnn_bbox_loss', mrcnn_b_loss,
-                                          step=epoch * vsg_train.total_batch_size + batch)
-                        tf.summary.scalar('loss/mrcnn_mask_binary_crossentropy_loss', mrcnn_m_bc_loss,
-                                          step=epoch * vsg_train.total_batch_size + batch)
-                        tf.summary.scalar('loss/total_loss', total_loss,
-                                          step=epoch * vsg_train.total_batch_size + batch)
-
-                    # 非极大抑制与其他条件过滤
-                    # [b, num_detections, (y1, x1, y2, x2, class_id, score)], [b, num_detections, h, w, num_classes]
-                    detections, pred_masks = DetectionMaskLayer(
-                        batch_size=self.batch_size,
-                        bbox_std_dev=self.bbox_std_dev,
-                        detection_max_instances=self.detection_max_instances,
-                        detection_nms_thres=self.detection_nms_thres,
-                        detection_min_confidence=self.detection_min_confidence
-                    )(rois, mrcnn_class, mrcnn_bbox, mrcnn_mask, np.array([0, 0, 1, 1], np.float32))
-
-                    for i in range(self.batch_size):
-                        # 将数据处理成原图大小
-                        boxes, class_ids, scores, full_masks = self.unmold_detections(
-                            detections=detections[i],
-                            mrcnn_mask=pred_masks[i],
-                            original_image_shape=self.image_shape)
-
-                        # 预测结果
-                        pred_img = imgs[i].copy() + self.pixel_mean
-                        for j in range(np.shape(class_ids)[0]):
-                            score = scores[j]
-                            if score > 0.1:
-                                class_name = self.classes[class_ids[j]]
-                                ymin, xmin, ymax, xmax = boxes[j]
-                                pred_mask_j = full_masks[:, :, j]
-                                pred_img = draw_instance(pred_img, pred_mask_j)
-                                pred_img = draw_bounding_box(pred_img, class_name, score, xmin, ymin, xmax, ymax)
-
-                        # ground true
-                        gt_img = imgs[i].copy() + self.pixel_mean
-                        active_num = len(np.where(labels[i])[0])
-                        for j in range(active_num):
-                            l = labels[i][j]
-                            class_name = self.classes[l]
-                            ymin, xmin, ymax, xmax = gt_boxes[i][j]
-                            gt_mask_j = unmold_mask(np.array(masks[i][:, :, j], dtype=np.float32), gt_boxes[i][j],
-                                                    self.image_shape)
-                            gt_img = draw_bounding_box(gt_img, class_name, l, xmin, ymin, xmax, ymax)
-                            gt_img = draw_instance(gt_img, gt_mask_j)
-
-                        concat_imgs = tf.concat([gt_img[:, :, ::-1], pred_img[:, :, ::-1]], axis=1)
-                        summ_imgs = tf.expand_dims(concat_imgs, 0)
-                        summ_imgs = tf.cast(summ_imgs, dtype=tf.uint8)
-                        with summary_writer.as_default():
-                            tf.summary.image("imgs/gt,pred,epoch{}".format(epoch), summ_imgs, step=batch)
 
     def train_with_tfrecord(self, epochs, log_dir, tfrec_path):
         """ 预先将数据处理成tfrecord格式，再进行训练，速度可以快很多
@@ -627,7 +493,7 @@ class MaskRCNN:
         for _ in vsg_train:
             total_batch_size += 1
 
-        mrcnn = self.mrcnn
+        mrcnn = self.model
         optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
         anchors = get_anchors(image_shape=self.image_shape,
                               scales=self.scales,
@@ -760,7 +626,7 @@ class MaskRCNN:
 
         step = 0
         for imgs, masks, gt_boxes, labels, rpn_target_match, rpn_target_box in vsg_train:
-            detections, mrcnn_class, mrcnn_bbox, mrcnn_mask = self.mrcnn.predict([imgs, all_anchors])
+            detections, mrcnn_class, mrcnn_bbox, mrcnn_mask = self.model.predict([imgs, all_anchors])
             for i in range(self.batch_size):
                 step += 1
                 boxes, class_ids, scores, full_masks = self.unmold_detections(detections=detections[i],
@@ -803,7 +669,7 @@ class MaskRCNN:
 
         :return boxes,class_ids,scores,masks
         """
-        detections, mrcnn_class, mrcnn_bbox, mrcnn_mask = self.mrcnn.predict([image, anchors])
+        detections, mrcnn_class, mrcnn_bbox, mrcnn_mask = self.model.predict([image, anchors])
         final_boxes = final_class_ids = final_scores = final_mask = []
         for i in range(self.batch_size):
             # 预测结果, 数据处理回原图大小
@@ -842,13 +708,3 @@ if __name__ == "__main__":
                      batch_size=1,
                      image_shape=[320,320,3]
                      )
-    # mrcnn = MaskRCNN(classes=['_background_', 'aeroplane'],
-    #                  voc_data_path='../../data/VOCdevkit/VOC2012/'
-    #                  )
-    # model = mrcnn.build_graph(is_training=False)
-    # model.summary(line_length=300)
-    # mrcnn.train_with_tfrecord(epochs=300, log_dir='./logs', tfrec_path='../data/voc_tfrec')
-    mrcnn.train(epochs=300, log_dir='./logs', data_path='../data/voc2012_46_samples')
-
-    # mrcnn.train_with_callback(epchos=101, log_dir='./logs')
-    # mrcnn.test(model_path='./mrcnn-step-70000.h5', log_dir='./logs')

@@ -29,7 +29,7 @@
 
 1. 训练
 ```python
-python3 mask_rcnn.py
+python3 train.py
 ```
 
 2. tensorboard查看效果

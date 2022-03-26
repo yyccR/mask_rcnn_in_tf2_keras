@@ -451,7 +451,7 @@ class VocSegmentDataGenerator:
         :param obj_files:
         :return: imgs - self.image_mean: [batch, h, w, 3]
                  masks: [batch, h, w, max_instances]
-                 gt_boxes: [batch, max_instances, 4]
+                 gt_boxes: [batch, max_instances, (ymin, xmin, ymax, xmax)]
                  labels: [batch, max_instances]
         """
         imgs = []
@@ -497,7 +497,7 @@ class VocSegmentDataGenerator:
                 gt_boxes.append(gt_box)
                 labels.append(label)
 
-        imgs = np.array(imgs, dtype=np.int8)
+        imgs = np.array(imgs, dtype=np.float32)
         masks = np.array(masks, dtype=np.int8)
         gt_boxes = np.array(gt_boxes, dtype=np.float32)
         labels = np.array(labels, dtype=np.int8)
