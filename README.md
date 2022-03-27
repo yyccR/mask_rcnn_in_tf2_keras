@@ -96,7 +96,7 @@ output_dir = '这里写要转CoCo格式的目录，建议建一个空目录'
 labels = "这里是你打标时所有的类别名, txt文本即可, 注意第一个类名是'_background_', 剩下的都是你打标的类名"
 ```
 3. 执行`data/labelme2coco.py`脚本会在`output_dir`生成对应的json文件和图片
-4. 修改`train_coco.py`文件中`classes`和`coco_annotation_file`, 注意`classes`第一个需要是'\_background\_'
+4. 修改`train_coco.py`文件中`classes`和`coco_annotation_file`, 注意`classes`第一个需要是'\_background\_', 每个类名单独一行
 5. 开始训练, `python3 train_coco.py`
 
 ### 代码细节

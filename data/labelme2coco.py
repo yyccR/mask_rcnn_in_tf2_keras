@@ -23,28 +23,9 @@ except ImportError:
 
 
 def main():
-    # parser = argparse.ArgumentParser(
-    #     formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    # )
-    # parser.add_argument("input_dir", help="input annotated directory")
-    # parser.add_argument("output_dir", help="output dataset directory")
-    # parser.add_argument("--labels", help="labels file", required=True)
-    # parser.add_argument(
-    #     "--noviz", help="no visualization", action="store_true"
-    # )
-    # args = parser.parse_args()
-
-    # if osp.exists(args.output_dir):
-    #     print("Output directory already exists:", args.output_dir)
-    #     sys.exit(1)
-    # os.makedirs(args.output_dir)
-    # os.makedirs(osp.join(args.output_dir, "JPEGImages"))
-    # if not args.noviz:
-    #     os.makedirs(osp.join(args.output_dir, "Visualization"))
-    # print("Creating dataset:", args.output_dir)
-    input_dir = '/Users/yang/Downloads/labels'
-    output_dir = '/Users/yang/Downloads/labelme2coco'
-    labels = '/Users/yang/Downloads/catDogLabels.txt'
+    input_dir = ''
+    output_dir = ''
+    labels = ''
     noviz = False
 
     now = datetime.datetime.now()
