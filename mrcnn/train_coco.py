@@ -29,11 +29,6 @@ def main():
     feature_strides = [4, 8, 16, 32, 64]
     anchor_stride = 1
     pixel_mean = np.array([[[102.9801, 115.9465, 122.7717]]])
-    # voc data class
-    # classes = ['_background_', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-    #            'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-    #            'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
-    # voc_data_path = "../data/voc2012_46_samples"
 
     # coco data class, CoCo类别有缺失的补none
     # classes = ['_background_', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
@@ -51,50 +46,21 @@ def main():
 
     # custom data class
     classes = ['_background_', 'face']
-    data_file = "../data/cat_dog_face/annotations.json"
-
-    log_dir = "./logs"
+    coco_annotation_file = "../data/cat_dog_face/annotations.json"
 
     # tensorboard 日志目录
+    log_dir = "./logs"
     summary_writer = tf.summary.create_file_writer(log_dir)
-
-    # voc格式数据
-    # data_train = VocSegmentDataGenerator(
-    #     classes=classes,
-    #     voc_data_path=voc_data_path,
-    #     batch_size=batch_size,
-    #     is_training=True,
-    #     im_size=image_shape[0],
-    #     data_max_size_per_class=2,
-    #     max_instance=detection_max_instances,
-    #     image_mean=pixel_mean,
-    #     use_mini_mask=use_mini_mask,
-    #     mini_mask_shape=mini_mask_shape
-    # )
-
-    # coco格式数据
     data_train = CoCoDataGenrator(
-        coco_annotation_file=data_file,
+        coco_annotation_file=coco_annotation_file,
         img_shape=image_shape,
         batch_size=batch_size,
         max_instances=detection_max_instances,
         image_mean=pixel_mean,
         use_mini_mask=use_mini_mask,
         mini_mask_shape=mini_mask_shape,
-        data_size=10 #这里指定要训练的数据个数, -1表示全部
+        data_size=10  # 这里指定要训练的数据个数, -1表示全部
     )
-    # vsg_val = VocSegmentDataGenerator(
-    #     classes=classes,
-    #     voc_data_path=data_path,
-    #     batch_size=batch_size,
-    #     is_training=False,
-    #     im_size=image_shape[0],
-    #     data_max_size_per_class=2,
-    #     max_instance=detection_max_instances,
-    #     image_mean=pixel_mean,
-    #     use_mini_mask=use_mini_mask,
-    #     mini_mask_shape=mini_mask_shape
-    # )
 
     mrcnn = MaskRCNN(classes=classes,
                      is_training=True,
@@ -222,6 +188,7 @@ def main():
                         tf.summary.image("imgs/gt,pred,epoch{}".format(epoch), summ_imgs, step=batch)
 
     mrcnn.model.save_weights("./mrcnn-epoch-{}.h5".format(epochs))
+
 
 if __name__ == "__main__":
     main()

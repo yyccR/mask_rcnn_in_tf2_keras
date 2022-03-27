@@ -25,11 +25,16 @@
 <img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/sample7.png" width="350" height="230"/>  <img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/sample8.png" width="350" height="230"/>
 
 
-### 训练`Voc2012`数据
+### 训练`Voc2012`或者`CoCo`数据
 
-1. 训练
+0. 训练voc数据
 ```python
-python3 train.py
+python3 train_voc.py
+```
+
+1. 训练coco数据
+```python
+python3 train_coco.py
 ```
 
 2. tensorboard查看效果
@@ -82,15 +87,17 @@ boxes,class_ids,scores,masks = mrcnn.predict(image=image, anchors=all_anchors, d
 ```
 
 ### 训练自己的数据
-1. 自定义自己的generator, 参考 `./data/generate_voc_segment_data.py`, 其`self.next_batch`方法输出每个batch数据, 格式为：
-- imgs - self.image_mean, shape = [batch, h, w, 3]
-- masks, shape = [batch, h, w, max_instances]
-- gt_boxes: shape = [batch, max_instances, 4]
-- labels: shape = [batch, max_instances]
 
-2. 修改`generate_tfrecord_files.py`, 替换 `voc_seg = VocSegmentDataGenerator(*)` 为上面你定义的generator类.
-3. 模型启动和训练流程和上文`Voc2012`训练一样
-4. 模型测试只需要修改对应类别即可.
+1. labelme打标好自己的数据
+2. 打开`data/labelme2coco.py`脚本, 修改如下地方
+```angular2html
+input_dir = '这里写labelme打标时保存json标记文件的目录'
+output_dir = '这里写要转CoCo格式的目录，建议建一个空目录'
+labels = "这里是你打标时所有的类别名, txt文本即可, 注意第一个类名是'_background_', 剩下的都是你打标的类名"
+```
+3. 执行`data/labelme2coco.py`脚本会在`output_dir`生成对应的json文件和图片
+4. 修改`train_coco.py`文件中`classes`和`coco_annotation_file`, 注意`classes`第一个需要是'\_background\_'
+5. 开始训练, `python3 train_coco.py`
 
 ### 代码细节
 
