@@ -2,6 +2,7 @@ import sys
 
 sys.path.append("../../detector_in_keras")
 
+import os
 import cv2
 from pycocotools.coco import COCO
 import numpy as np
@@ -22,6 +23,7 @@ class CoCoDataGenrator:
                  mini_mask_shape=(56, 56),
                  data_size = 10
                  ):
+        self.coco_annotation_file = coco_annotation_file
         self.img_shape = img_shape
         self.batch_size = batch_size
         self.max_instances = max_instances
@@ -274,8 +276,20 @@ class CoCoDataGenrator:
             keypoints = np.array(keypoints, dtype=np.int8)
             outputs['keypoints'] = keypoints
 
-        # 这里如果是自己打标的数据，修改一下读图片的方法就行
-        img = io.imread(self.coco.imgs[image_id]['coco_url'])
+        img_coco_url_file = str(self.coco.imgs[image_id].get('coco_url',""))
+        img_url_file = str(self.coco.imgs[image_id].get('url',""))
+        img_local_file = str(self.coco.imgs[image_id].get('file_name',""))
+        img_local_file = os.path.join(os.path.dirname(self.coco_annotation_file), img_local_file)
+        img = []
+
+        if os.path.isfile(img_local_file):
+            img = io.imread(img_local_file)
+        elif img_coco_url_file.startswith("http"):
+            img = io.imread(self.coco.imgs[image_id]['coco_url'])
+        elif img_url_file.startswith("http"):
+            img = io.imread(self.coco.imgs[image_id]['coco_url'])
+        else:
+            return outputs
         if len(np.shape(img)) < 2:
             return outputs
         elif len(np.shape(img)) == 2:
@@ -300,18 +314,20 @@ if __name__ == "__main__":
     from data.visual_ops import draw_bounding_box, draw_instance
     from mrcnn.bbox_ops import unmold_mask
 
-    file = "./coco2017/instances_val2017.json"
-    classes = ['_background_', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-               'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'none', 'stop sign',
-               'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant',
-               'bear', 'zebra', 'giraffe', 'none', 'backpack', 'umbrella', 'none', 'none', 'handbag',
-               'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
-               'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'none', 'wine glass',
-               'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli',
-               'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'none',
-               'dining table', 'none', 'none', 'toilet', 'none', 'tv', 'laptop', 'mouse', 'remote', 'keyboard',
-               'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'none', 'book', 'clock',
-               'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+    file = "./cat_dog_face/annotations.json"
+    classes = ['_background_', 'face']
+    # file = "./coco2017/instances_val2017.json"
+    # classes = ['_background_', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+    #            'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'none', 'stop sign',
+    #            'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant',
+    #            'bear', 'zebra', 'giraffe', 'none', 'backpack', 'umbrella', 'none', 'none', 'handbag',
+    #            'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
+    #            'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'none', 'wine glass',
+    #            'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli',
+    #            'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'none',
+    #            'dining table', 'none', 'none', 'toilet', 'none', 'tv', 'laptop', 'mouse', 'remote', 'keyboard',
+    #            'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'none', 'book', 'clock',
+    #            'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
     image_shape = (320,320,3)
     batch_size = 5
     coco = CoCoDataGenrator(
@@ -324,15 +340,8 @@ if __name__ == "__main__":
         mini_mask_shape=(56,56),
         data_size=10
     )
-    # data = coco.next_batch()
-    # gt_imgs = data['imgs']
-    # gt_boxes = data['bboxes']
-    # gt_classes = data['labels']
-    # gt_masks = data['masks']
-    # valid_nums = data['valid_nums']
 
     imgs, masks, gt_boxes, labels = coco.next_batch()
-
     for i in range(batch_size):
         gt_img = imgs[i].copy() + np.array([[[102.9801, 115.9465, 122.7717]]])
         active_num = len(np.where(labels[i])[0])
@@ -342,60 +351,8 @@ if __name__ == "__main__":
             ymin, xmin, ymax, xmax = gt_boxes[i][j]
             gt_mask_j = unmold_mask(np.array(masks[i][:, :, j], dtype=np.float32), gt_boxes[i][j],
                                     image_shape)
-
             gt_img = draw_bounding_box(gt_img, class_name, l, xmin, ymin, xmax, ymax)
-            # cv2.imshow("mask", np.array(gt_mask_j, dtype=np.uint8) * 255)
-            # cv2.imshow("img", gt_img)
-            # cv2.waitKey(0)
             gt_img = draw_instance(gt_img, gt_mask_j)
-        cv2.imshow("", gt_img)
+        cv2.imshow("", np.array(gt_img,dtype=np.uint8))
         cv2.waitKey(0)
 
-
-    # img = gt_imgs[-1]
-    # for i in range(valid_nums[-1]):
-    #     label = gt_classes[-1][i]
-    #     label_name = coco.coco.cats[label]['name']
-    #     x1, y1, x2, y2 = gt_boxes[-1][i]
-    #     mask = gt_masks[-1][:, :, i]
-    #     img = draw_instance(img, mask)
-    #     img = draw_bounding_box(img, label_name, label, x1, y1, x2, y2)
-    # cv2.imshow("", img)
-    # cv2.waitKey(0)
-
-    # data = coco.next_batch()
-    # print(data)
-    # print(coco.coco.cats)
-    # classes = []
-    # for i in range(91):
-    #     if coco.coco.cats.get(i):
-    #         classes.append(coco.coco.cats[i]['name'])
-    #         print(i, coco.coco.cats[i]['name'])
-    #     else:
-    #         classes.append('none')
-    #         print(i, "none")
-    # print(classes)
-    # class_names = list(map(lambda x:x['name'],coco.coco.cats))
-
-    # coco = COCO(annotation_file=file)
-    #
-    # print("---------------------------")
-    # for anno in coco.dataset['info']:
-    #     print(anno, coco.dataset['info'][anno])
-    #
-    # print("---------------------------")
-    # for anno in coco.dataset['licenses']:
-    #     print(anno)
-    #
-    # print("---------------------------")
-    # for anno in coco.dataset['categories']:
-    #     print(anno)
-    #
-    # print("---------------------------")
-    # for anno in coco.dataset['images']:
-    #     print(anno)
-
-    # print("---------------------------")
-    # for anno in coco.dataset['annotations']:
-    #     print(anno)
-    # anno = coco.anns[900100259690]
