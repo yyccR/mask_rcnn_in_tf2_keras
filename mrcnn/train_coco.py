@@ -59,7 +59,6 @@ def main():
         image_mean=pixel_mean,
         use_mini_mask=use_mini_mask,
         mini_mask_shape=mini_mask_shape,
-        data_size=10  # 这里指定要训练的数据个数, -1表示全部
     )
 
     mrcnn = MaskRCNN(classes=classes,
