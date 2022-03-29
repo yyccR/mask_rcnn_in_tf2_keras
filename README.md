@@ -95,7 +95,8 @@ input_dir = '这里写labelme打标时保存json标记文件的目录'
 output_dir = '这里写要转CoCo格式的目录，建议建一个空目录'
 labels = "这里是你打标时所有的类别名, txt文本即可, 注意第一个类名是_background_, 剩下的都是你打标的类名, 每行一个类, 如下图示例"
 ```
-![标签文件](./data/tmp/labels.png)
+<img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn_in_tf2_keras/labels.png" width="266" height="211"/>
+
 
 3. 执行`data/labelme2coco.py`脚本会在`output_dir`生成对应的json文件和图片
 4. 修改`train_coco.py`文件中`classes`和`coco_annotation_file`, 注意`classes`第一个需要是'\_background\_', 每个类名单独一行
