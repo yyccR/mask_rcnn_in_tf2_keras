@@ -24,9 +24,9 @@ except ImportError:
 
 
 def main():
-    input_dir = '/Users/yang/Downloads/quanbujpg'
-    output_dir = '/Users/yang/Downloads/quanbujpg_output'
-    labels = '/Users/yang/Downloads/Labels.txt'
+    input_dir = ''
+    output_dir = ''
+    labels = ''
     noviz = False
 
     now = datetime.datetime.now()
@@ -108,31 +108,34 @@ def main():
                     group_id = uuid.uuid1()
 
                 instance = (label, group_id)
+                # print(instance)
 
                 if instance in masks:
                     masks[instance] = masks[instance] | mask
                 else:
                     masks[instance] = mask
+                # print(masks[instance].shape)
 
-                # if shape_type == "rectangle":
-                #     (x1, y1), (x2, y2) = points
-                #     x1, x2 = sorted([x1, x2])
-                #     y1, y2 = sorted([y1, y2])
-                #     points = [x1, y1, x2, y1, x2, y2, x1, y2]
-                # if shape_type == "circle":
-                #     (x1, y1), (x2, y2) = points
-                #     r = np.linalg.norm([x2 - x1, y2 - y1])
-                #     # r(1-cos(a/2))<x, a=2*pi/N => N>pi/arccos(1-x/r)
-                #     # x: tolerance of the gap between the arc and the line segment
-                #     n_points_circle = max(int(np.pi / np.arccos(1 - 1 / r)), 12)
-                #     i = np.arange(n_points_circle)
-                #     x = x1 + r * np.sin(2 * np.pi / n_points_circle * i)
-                #     y = y1 + r * np.cos(2 * np.pi / n_points_circle * i)
-                #     points = np.stack((x, y), axis=1).flatten().tolist()
-                # else:
-                #     points = np.asarray(points).flatten().tolist()
+                if shape_type == "rectangle":
+                    (x1, y1), (x2, y2) = points
+                    x1, x2 = sorted([x1, x2])
+                    y1, y2 = sorted([y1, y2])
+                    points = [x1, y1, x2, y1, x2, y2, x1, y2]
+                if shape_type == "circle":
+                    (x1, y1), (x2, y2) = points
+                    r = np.linalg.norm([x2 - x1, y2 - y1])
+                    # r(1-cos(a/2))<x, a=2*pi/N => N>pi/arccos(1-x/r)
+                    # x: tolerance of the gap between the arc and the line segment
+                    n_points_circle = max(int(np.pi / np.arccos(1 - 1 / r)), 12)
+                    i = np.arange(n_points_circle)
+                    x = x1 + r * np.sin(2 * np.pi / n_points_circle * i)
+                    y = y1 + r * np.cos(2 * np.pi / n_points_circle * i)
+                    points = np.stack((x, y), axis=1).flatten().tolist()
+                else:
+                    points = np.asarray(points).flatten().tolist()
 
                 segmentations[instance].append(points)
+                print(segmentations[instance])
         segmentations = dict(segmentations)
 
         for instance, mask in masks.items():
