@@ -714,18 +714,18 @@ class MaskRCNN:
 if __name__ == "__main__":
 
     # 预测流程
-    mrcnn = MaskRCNN(classes=['_background_', 'face'],
+    mrcnn = MaskRCNN(classes=['_background_', 'chromo'],
                      is_training=False,
                      batch_size=1,
-                     image_shape=[320,320,3]
+                     image_shape=[640,640,3]
                      )
-    model_path = './mrcnn-epoch-100.h5'
+    model_path = './mrcnn-epoch-80.h5'
     mrcnn.load_weights(model_path, by_name=True)
     anchors = get_anchors(image_shape=mrcnn.image_shape,
                           scales=mrcnn.scales,
                           ratios=mrcnn.ratios,
                           feature_strides=mrcnn.feature_strides,
                           anchor_stride=mrcnn.anchor_stride)
-    image_file = "../data/cat_dog_face/JPEGImages/Cats_Test1075.jpg"
+    image_file = "../data/chromo/JPEGImages/10_62.jpg"
     image = cv2.imread(image_file)
     boxes, class_ids, scores, masks = mrcnn.predict(image=image, anchors=anchors, draw_detect_res_figure=True)
