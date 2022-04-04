@@ -52,6 +52,7 @@ tensorboard --host 0.0.0.0 --logdir ./logs/ --port 9013 --samples_per_plugin=ima
 ### 测试`Voc2012`
 1. 构建模型
 ```python
+# 预测时候batch_size设置为1
 from mrcnn.mask_rcnn import MaskRCNN
 mrcnn = MaskRCNN(classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
                               'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
@@ -67,23 +68,25 @@ model_path = '.h5 file path'
 mrcnn.load_weights(model_path, by_name=True)
 ```
 
-3. 测试, 在`/tmp`目录下可以看到检测结果保存的图片
+3. 测试, 在`../data/tmp`目录下可以看到检测结果保存的图片
 ```python
 import cv2
-import numpy as np
 from mrcnn.anchors_ops import get_anchors
 anchors = get_anchors(image_shape=mrcnn.image_shape,
                       scales=mrcnn.scales,
                       ratios=mrcnn.ratios,
                       feature_strides=mrcnn.feature_strides,
                       anchor_stride=mrcnn.anchor_stride)
-all_anchors = np.stack([anchors], axis=0)
 
-image = cv2.imread("image_path")
-image = cv2.resize(image, (mrcnn.image_shape[0], mrcnn.image_shape[1]))
-image = np.stack([image], axis=0)
-
-boxes,class_ids,scores,masks = mrcnn.predict(image=image, anchors=all_anchors, draw_detect_res_figure=True)
+anchors = get_anchors(image_shape=mrcnn.image_shape,
+                          scales=mrcnn.scales,
+                          ratios=mrcnn.ratios,
+                          feature_strides=mrcnn.feature_strides,
+                          anchor_stride=mrcnn.anchor_stride)
+image_file = "你的测试图片路径"
+image = cv2.imread(image_file)
+# draw_detect_res_figure=True, 这里会将预测结果的目标边框,分割mask画到原图上, 保存在../data/tmp/test.jpeg下
+boxes, class_ids, scores, masks = mrcnn.predict(image=image, anchors=anchors, draw_detect_res_figure=True)
 ```
 
 ### 训练自己的数据

@@ -29,6 +29,8 @@ def main():
     feature_strides = [4, 8, 16, 32, 64]
     anchor_stride = 1
     pixel_mean = np.array([[[102.9801, 115.9465, 122.7717]]])
+    # 这里指定要训练的数据个数, 调试用, -1表示训练全部
+    data_size = 10
 
     # coco data class, CoCo类别有缺失的补none
     # classes = ['_background_', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
@@ -59,7 +61,7 @@ def main():
         image_mean=pixel_mean,
         use_mini_mask=use_mini_mask,
         mini_mask_shape=mini_mask_shape,
-        data_size=10  # 这里指定要训练的数据个数, -1表示全部
+        data_size=data_size
     )
 
     mrcnn = MaskRCNN(classes=classes,

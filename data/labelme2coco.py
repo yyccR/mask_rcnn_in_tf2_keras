@@ -23,10 +23,10 @@ except ImportError:
 
 
 def main():
-    input_dir = ''
-    output_dir = ''
-    labels = ''
-    noviz = False
+    input_dir = '/Users/yang/Downloads/val2017'
+    output_dir = '/Users/yang/Downloads/val2017/output'
+    labels = '/Users/yang/Downloads/val2017/labels.txt'
+    noviz = True
 
     now = datetime.datetime.now()
 
