@@ -21,7 +21,7 @@ class CoCoDataGenrator:
                  image_mean=np.array([[[102.9801, 115.9465, 122.7717]]]),
                  use_mini_mask=True,
                  mini_mask_shape=(56, 56),
-                 data_size = 10
+                 data_size = -1
                  ):
         self.coco_annotation_file = coco_annotation_file
         self.img_shape = img_shape

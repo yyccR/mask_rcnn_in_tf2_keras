@@ -6,6 +6,7 @@ import datetime
 import glob
 import json
 import os
+import cv2
 import os.path as osp
 import sys
 import uuid
@@ -18,7 +19,7 @@ import labelme
 try:
     import pycocotools.mask
 except ImportError:
-    print("Please install pycocotools:\n\n    pip install pycocotools\n")
+    print("Please install pycocotools:\n\n    pip install \n")
     sys.exit(1)
 
 
@@ -100,16 +101,20 @@ def main():
                 mask = labelme.utils.shape_to_mask(
                     img.shape[:2], points, shape_type
                 )
+                # cv2.imshow("",np.array(mask, dtype=np.uint8)*255)
+                # cv2.waitKey(0)
 
                 if group_id is None:
                     group_id = uuid.uuid1()
 
                 instance = (label, group_id)
+                # print(instance)
 
                 if instance in masks:
                     masks[instance] = masks[instance] | mask
                 else:
                     masks[instance] = mask
+                # print(masks[instance].shape)
 
                 if shape_type == "rectangle":
                     (x1, y1), (x2, y2) = points
@@ -130,6 +135,7 @@ def main():
                     points = np.asarray(points).flatten().tolist()
 
                 segmentations[instance].append(points)
+                print(segmentations[instance])
         segmentations = dict(segmentations)
 
         for instance, mask in masks.items():
