@@ -73,12 +73,6 @@ mrcnn.load_weights(model_path, by_name=True)
 import cv2
 from mrcnn.anchors_ops import get_anchors
 anchors = get_anchors(image_shape=mrcnn.image_shape,
-                      scales=mrcnn.scales,
-                      ratios=mrcnn.ratios,
-                      feature_strides=mrcnn.feature_strides,
-                      anchor_stride=mrcnn.anchor_stride)
-
-anchors = get_anchors(image_shape=mrcnn.image_shape,
                           scales=mrcnn.scales,
                           ratios=mrcnn.ratios,
                           feature_strides=mrcnn.feature_strides,
