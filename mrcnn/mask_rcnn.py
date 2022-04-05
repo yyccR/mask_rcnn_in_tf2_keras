@@ -699,10 +699,10 @@ class MaskRCNN:
 
         # 再把unmodel结果的mask和box处理回原图大小
         boxes = np.array(boxes, dtype=np.float32)
-        b0 = np.maximum(np.minimum(boxes[:, 0] / im_scale, im_shape[1] - 1), 0)
-        b1 = np.maximum(np.minimum(boxes[:, 1] / im_scale, im_shape[0] - 1), 0)
-        b2 = np.maximum(np.minimum(boxes[:, 2] / im_scale, im_shape[1] - 1), 0)
-        b3 = np.maximum(np.minimum(boxes[:, 3] / im_scale, im_shape[0] - 1), 0)
+        b0 = np.maximum(np.minimum(boxes[:, 0] / im_scale, im_shape[0] - 1), 0)
+        b1 = np.maximum(np.minimum(boxes[:, 1] / im_scale, im_shape[1] - 1), 0)
+        b2 = np.maximum(np.minimum(boxes[:, 2] / im_scale, im_shape[0] - 1), 0)
+        b3 = np.maximum(np.minimum(boxes[:, 3] / im_scale, im_shape[1] - 1), 0)
         origin_boxes = np.stack([b0, b1, b2, b3], axis=1)
 
         origin_masks = []
