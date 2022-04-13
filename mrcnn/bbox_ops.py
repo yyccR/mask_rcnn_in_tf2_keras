@@ -1,4 +1,3 @@
-
 import cv2
 import skimage
 import skimage.transform
@@ -209,16 +208,17 @@ def unmold_mask(mask, bbox, image_shape):
     Returns a binary mask with the same size as the original image.
     """
     threshold = 0.5
+    h, w, _ = image_shape
     y1, x1, y2, x2 = bbox
-    y1 = int(y1)
-    x1 = int(x1)
-    y2 = int(y2)
-    x2 = int(x2)
+    y1 = max(int(y1), 0)
+    x1 = max(int(x1), 0)
+    y2 = min(int(y2), h)
+    x2 = min(int(x2), w)
     # mask = cv2.resize(mask, (x2 - x1,y2 - y1))
     mask = skimage.transform.resize(mask, (y2 - y1, x2 - x1),
-                                              order=1, mode='constant', cval=0, clip=True,
-                                              preserve_range=False, anti_aliasing=False,
-                                              anti_aliasing_sigma=None)
+                                    order=1, mode='constant', cval=0, clip=True,
+                                    preserve_range=False, anti_aliasing=False,
+                                    anti_aliasing_sigma=None)
     mask = np.where(mask >= threshold, 1, 0).astype(np.bool)
 
     # Put the mask in the right location.
