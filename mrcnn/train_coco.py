@@ -20,7 +20,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 def main():
     epochs = 300
     batch_size = 2
-    image_shape = [320, 320, 3]
+    image_shape = [640, 640, 3]
     use_mini_mask = True
     mini_mask_shape = (56, 56)
     detection_max_instances = 100
@@ -29,6 +29,8 @@ def main():
     feature_strides = [4, 8, 16, 32, 64]
     anchor_stride = 1
     pixel_mean = np.array([[[102.9801, 115.9465, 122.7717]]])
+    # 这里指定要训练的数据个数, 调试用, -1表示训练全部
+    data_size = 10
 
     # coco data class, CoCo类别有缺失的补none
     # classes = ['_background_', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
@@ -59,6 +61,7 @@ def main():
         image_mean=pixel_mean,
         use_mini_mask=use_mini_mask,
         mini_mask_shape=mini_mask_shape,
+        data_size=data_size
     )
 
     mrcnn = MaskRCNN(classes=classes,
@@ -84,6 +87,14 @@ def main():
     for epoch in range(epochs):
         for batch in range(data_train.total_batch_size):
             imgs, masks, gt_boxes, labels = data_train.next_batch()
+            print(np.shape(imgs))
+            print(np.shape(masks))
+            print(np.shape(gt_boxes))
+            print("-------{}-{}--------".format(epoch, batch))
+            if np.sum(gt_boxes) <= 0.:
+                print(batch, " gt_boxes: ", gt_boxes)
+                continue
+
             rpn_target_match, rpn_target_box = build_rpn_targets(
                 anchors=anchors,
                 gt_boxes=gt_boxes,
@@ -91,15 +102,6 @@ def main():
                 batch_size=batch_size,
                 rpn_train_anchors_per_image=mrcnn.rpn_train_anchors_per_image,
                 rpn_bbox_std_dev=mrcnn.rpn_bbox_std_dev)
-
-            print(np.shape(imgs))
-            print(np.shape(masks))
-            print(np.shape(gt_boxes))
-            print("-------{}-{}--------".format(epoch, batch))
-
-            if np.sum(gt_boxes) <= 0.:
-                print(batch, " gt_boxes: ", gt_boxes)
-                continue
 
             if epoch % 20 == 0 and epoch != 0:
                 mrcnn.model.save_weights("./mrcnn-epoch-{}.h5".format(epoch))

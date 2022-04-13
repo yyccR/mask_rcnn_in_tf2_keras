@@ -24,10 +24,10 @@ except ImportError:
 
 
 def main():
-    input_dir = ''
-    output_dir = ''
-    labels = ''
-    noviz = False
+    input_dir = '/Users/yang/Downloads/edit_group_id'
+    output_dir = '/Users/yang/Downloads/chromo'
+    labels = '/Users/yang/Downloads/edit_group_id/labels.txt'
+    noviz = True
 
     now = datetime.datetime.now()
 
@@ -68,13 +68,12 @@ def main():
     out_ann_file = osp.join(output_dir, "annotations.json")
     label_files = glob.glob(osp.join(input_dir, "*.json"))
     for image_id, filename in enumerate(label_files):
-        print("Generating dataset from:", filename)
+        # print("Generating dataset from:", filename)
 
         label_file = labelme.LabelFile(filename=filename)
 
         base = osp.splitext(osp.basename(filename))[0]
         out_img_file = osp.join(output_dir, "JPEGImages", base + ".jpg")
-
         img = labelme.utils.img_data_to_arr(label_file.imageData)
         imgviz.io.imsave(out_img_file, img)
         data["images"].append(
@@ -135,7 +134,6 @@ def main():
                     points = np.asarray(points).flatten().tolist()
 
                 segmentations[instance].append(points)
-                print(segmentations[instance])
         segmentations = dict(segmentations)
 
         for instance, mask in masks.items():

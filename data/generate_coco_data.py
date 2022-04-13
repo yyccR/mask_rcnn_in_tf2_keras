@@ -2,6 +2,7 @@ import sys
 
 sys.path.append("../../detector_in_keras")
 
+import re
 import os
 import cv2
 from pycocotools.coco import COCO
@@ -21,7 +22,7 @@ class CoCoDataGenrator:
                  image_mean=np.array([[[102.9801, 115.9465, 122.7717]]]),
                  use_mini_mask=True,
                  mini_mask_shape=(56, 56),
-                 data_size = -1
+                 data_size=-1
                  ):
         self.coco_annotation_file = coco_annotation_file
         self.img_shape = img_shape
@@ -51,7 +52,7 @@ class CoCoDataGenrator:
                 if annos:
                     target_img_ids.append(k)
         if self.data_size >= 0:
-           target_img_ids = target_img_ids[:self.data_size]
+            target_img_ids = target_img_ids[:self.data_size]
         self.total_batch_size = len(target_img_ids) // self.batch_size
         self.img_ids = target_img_ids
 
@@ -276,11 +277,12 @@ class CoCoDataGenrator:
             keypoints = np.array(keypoints, dtype=np.int8)
             outputs['keypoints'] = keypoints
 
-        img_coco_url_file = str(self.coco.imgs[image_id].get('coco_url',""))
-        img_url_file = str(self.coco.imgs[image_id].get('url',""))
-        img_local_file = str(self.coco.imgs[image_id].get('file_name',""))
+        img_coco_url_file = str(self.coco.imgs[image_id].get('coco_url', ""))
+        img_url_file = str(self.coco.imgs[image_id].get('url', ""))
+        img_local_file = str(self.coco.imgs[image_id].get('file_name', "")).encode('unicode_escape').decode()
         img_local_file = os.path.join(os.path.dirname(self.coco_annotation_file), img_local_file)
-        img = []
+        img_local_file = re.sub(r"\\\\", "/", img_local_file)
+        # img = []
 
         if os.path.isfile(img_local_file):
             img = io.imread(img_local_file)
@@ -290,11 +292,13 @@ class CoCoDataGenrator:
             img = io.imread(self.coco.imgs[image_id]['coco_url'])
         else:
             return outputs
+
         if len(np.shape(img)) < 2:
             return outputs
         elif len(np.shape(img)) == 2:
-            img = np.expand_dims(img, axis=-1)
-            img = np.pad(img, [(0, 0), (0, 0), (0, 2)])
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+            # img = np.expand_dims(img, axis=-1)
+            # img = np.pad(img, [(0, 0), (0, 0), (0, 2)])
         else:
             img = img[:, :, ::-1]
 
@@ -314,8 +318,8 @@ if __name__ == "__main__":
     from data.visual_ops import draw_bounding_box, draw_instance
     from mrcnn.bbox_ops import unmold_mask
 
-    file = "./cat_dog_face/annotations.json"
-    classes = ['_background_', 'face']
+    file = "./chromo/annotations.json"
+    classes = ['_background_', 'chromo']
     # file = "./coco2017/instances_val2017.json"
     # classes = ['_background_', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
     #            'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'none', 'stop sign',
@@ -328,7 +332,7 @@ if __name__ == "__main__":
     #            'dining table', 'none', 'none', 'toilet', 'none', 'tv', 'laptop', 'mouse', 'remote', 'keyboard',
     #            'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'none', 'book', 'clock',
     #            'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']
-    image_shape = (320,320,3)
+    image_shape = (640, 640, 3)
     batch_size = 5
     coco = CoCoDataGenrator(
         coco_annotation_file=file,
@@ -337,7 +341,7 @@ if __name__ == "__main__":
         max_instances=100,
         image_mean=np.array([[[102.9801, 115.9465, 122.7717]]]),
         use_mini_mask=True,
-        mini_mask_shape=(56,56),
+        mini_mask_shape=(56, 56),
         data_size=10
     )
 
@@ -353,6 +357,5 @@ if __name__ == "__main__":
                                     image_shape)
             gt_img = draw_bounding_box(gt_img, class_name, l, xmin, ymin, xmax, ymax)
             gt_img = draw_instance(gt_img, gt_mask_j)
-        cv2.imshow("", np.array(gt_img,dtype=np.uint8))
+        cv2.imshow("", np.array(gt_img, dtype=np.uint8))
         cv2.waitKey(0)
-

@@ -3,7 +3,7 @@ import sys
 sys.path.append("../../mask_rcnn_in_tf2_keras")
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 import cv2
 import numpy as np
@@ -49,7 +49,7 @@ class MaskRCNN:
                  detection_min_confidence=0.3,
                  detection_nms_thres=0.3,
                  detection_max_instances=100,
-                 pixel_mean = np.array([[[102.9801, 115.9465, 122.7717]]])):
+                 pixel_mean=np.array([[[102.9801, 115.9465, 122.7717]]])):
         self.classes = classes
         self.num_classes = len(classes)
         self.image_shape = image_shape
@@ -594,7 +594,8 @@ class MaskRCNN:
                             l = labels[i][j]
                             class_name = self.classes[l]
                             ymin, xmin, ymax, xmax = gt_boxes[i][j]
-                            gt_mask_j = unmold_mask(np.array(masks[i][:, :, j],dtype=np.float32), gt_boxes[i][j], self.image_shape)
+                            gt_mask_j = unmold_mask(np.array(masks[i][:, :, j], dtype=np.float32), gt_boxes[i][j],
+                                                    self.image_shape)
                             gt_img = draw_bounding_box(gt_img, class_name, l, xmin, ymin, xmax, ymax)
                             gt_img = draw_instance(gt_img, gt_mask_j)
 
@@ -650,10 +651,10 @@ class MaskRCNN:
                     l = labels[i][j]
                     class_name = self.classes[l]
                     ymin, xmin, ymax, xmax = gt_boxes[i][j]
-                    gt_mask_j = unmold_mask(np.array(masks[i][:,:, j],dtype=np.float32), gt_boxes[i][j], self.image_shape)
+                    gt_mask_j = unmold_mask(np.array(masks[i][:, :, j], dtype=np.float32), gt_boxes[i][j],
+                                            self.image_shape)
                     gt_img = draw_bounding_box(gt_img, class_name, l, xmin, ymin, xmax, ymax)
                     gt_img = draw_instance(gt_img, gt_mask_j)
-
 
                 concat_imgs = tf.concat([gt_img[:, :, ::-1], pred_img[:, :, ::-1]], axis=1)
                 summ_imgs = tf.expand_dims(concat_imgs, 0)
@@ -662,49 +663,88 @@ class MaskRCNN:
                     tf.summary.image("imgs/gt,pred,epoch{}".format(step // 30), summ_imgs, step=step)
 
     def predict(self, image, anchors, draw_detect_res_figure=True):
-        """ 预测，输入的batch=1, batch跟随模型构建过程
+        """ 单图预测
 
-        :param image: [batch, h, w, c]
-        :param anchors: [batch, (y1, x1, y2, x2)]
+        :param image: [h, w, c]
+        :param anchors: [num_anchors, (y1, x1, y2, x2)]
 
-        :return boxes,class_ids,scores,masks
+        :return
+        boxes: [N, (y1, x1, y2, x2)] Bounding boxes in pixels
+        class_ids: [N] Integer class IDs for each bounding box
+        scores: [N] Float probability scores of the class_id
+        masks: [num_instances, height, width] Instance masks
         """
-        detections, mrcnn_class, mrcnn_bbox, mrcnn_mask = self.model.predict([image, anchors])
-        final_boxes = final_class_ids = final_scores = final_mask = []
-        for i in range(self.batch_size):
-            # 预测结果, 数据处理回原图大小
-            boxes, class_ids, scores, full_masks = self.unmold_detections(detections=detections[i],
-                                                                          mrcnn_mask=mrcnn_mask[i],
-                                                                          original_image_shape=self.image_shape)
-            final_boxes.append(boxes)
-            final_class_ids.append(class_ids)
-            final_scores.append(scores)
-            final_mask.append(full_masks)
 
-            # 检测结果保存图片
-            if draw_detect_res_figure:
-                if not os.path.isdir("../data/tmp"):
-                    os.mkdir("../data/tmp")
-                pred_img = image[i].copy() + self.pixel_mean
-                for j in range(np.shape(class_ids)[0]):
-                    score = scores[j]
-                    if score > 0.5:
-                        class_name = self.classes[class_ids[j]]
-                        ymin, xmin, ymax, xmax = boxes[j]
-                        pred_mask_j = full_masks[:, :, j]
-                        pred_img = draw_instance(pred_img, pred_mask_j)
-                        pred_img = draw_bounding_box(pred_img, class_name, score, xmin, ymin, xmax, ymax)
-                        pred_img = np.array(pred_img, dtype=np.uint8)
-                        cv2.imwrite("../data/tmp/{}.jpeg".format(i), pred_img)
+        im_shape = np.shape(image)
+        im_size_max = np.max(im_shape[0:2])
+        im_scale = float(self.image_shape[0]) / float(im_size_max)
 
-        return final_boxes, final_class_ids, final_scores, final_mask
+        # resize原始图片
+        im_resize = cv2.resize(image, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_LINEAR)
+        im_resize_shape = np.shape(im_resize)
+        im_blob = np.zeros(self.image_shape, dtype=np.float32)
+        im_blob[0:im_resize_shape[0], 0:im_resize_shape[1], :] = im_resize
+        im_blob -= self.pixel_mean
+        im_blob = np.array([im_blob], dtype=np.float32)
+
+        # anchors加一个batch维度
+        anchors = np.array([anchors], dtype=np.float32)
+
+        # predict
+        detections, mrcnn_class, mrcnn_bbox, mrcnn_mask = self.model.predict([im_blob, anchors])
+        # 预测结果, 数据处理回input图片大小
+        boxes, class_ids, scores, full_masks = self.unmold_detections(detections=detections[0],
+                                                                      mrcnn_mask=mrcnn_mask[0],
+                                                                      original_image_shape=self.image_shape)
+
+        # 再把unmodel结果的mask和box处理回原图大小
+        boxes = np.array(boxes, dtype=np.float32)
+        b0 = np.maximum(np.minimum(boxes[:, 0] / im_scale, im_shape[0] - 1), 0)
+        b1 = np.maximum(np.minimum(boxes[:, 1] / im_scale, im_shape[1] - 1), 0)
+        b2 = np.maximum(np.minimum(boxes[:, 2] / im_scale, im_shape[0] - 1), 0)
+        b3 = np.maximum(np.minimum(boxes[:, 3] / im_scale, im_shape[1] - 1), 0)
+        origin_boxes = np.stack([b0, b1, b2, b3], axis=1)
+
+        origin_masks = []
+        for i in range(np.shape(full_masks)[2]):
+            origin_mask = cv2.resize(np.array(full_masks[0:im_resize_shape[0], 0:im_resize_shape[1], i], dtype=np.float32),
+                                     (im_shape[1], im_shape[0]))
+            origin_mask = origin_mask > 0.5
+            origin_masks.append(origin_mask)
+
+        # 检测结果保存图片
+        if draw_detect_res_figure:
+            if not os.path.isdir("../data/tmp"):
+                os.mkdir("../data/tmp")
+            pred_img = image.copy()
+            for j in range(np.shape(class_ids)[0]):
+                score = scores[j]
+                if score > 0.5:
+                    class_name = self.classes[class_ids[j]]
+                    ymin, xmin, ymax, xmax = origin_boxes[j]
+                    pred_mask_j = origin_masks[j]
+                    pred_img = draw_instance(pred_img, pred_mask_j)
+                    pred_img = draw_bounding_box(pred_img, class_name, score, xmin, ymin, xmax, ymax)
+            pred_img = np.array(pred_img, dtype=np.uint8)
+            cv2.imwrite("../data/tmp/test.jpeg", pred_img)
+
+        return boxes, class_ids, scores, full_masks
 
 
 if __name__ == "__main__":
-    mrcnn = MaskRCNN(classes=['_background_', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-                              'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-                              'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'],
-                     is_training=True,
+    # 预测流程
+    mrcnn = MaskRCNN(classes=['_background_', 'chromo'],
+                     is_training=False,
                      batch_size=1,
-                     image_shape=[320,320,3]
+                     image_shape=[640, 640, 3]
                      )
+    model_path = './mrcnn-epoch-80.h5'
+    mrcnn.load_weights(model_path, by_name=True)
+    anchors = get_anchors(image_shape=mrcnn.image_shape,
+                          scales=mrcnn.scales,
+                          ratios=mrcnn.ratios,
+                          feature_strides=mrcnn.feature_strides,
+                          anchor_stride=mrcnn.anchor_stride)
+    image_file = "../data/chromo/JPEGImages/10_62.jpg"
+    image = cv2.imread(image_file)
+    boxes, class_ids, scores, masks = mrcnn.predict(image=image, anchors=anchors, draw_detect_res_figure=True)
