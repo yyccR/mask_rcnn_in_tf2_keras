@@ -29,6 +29,8 @@ def main():
     feature_strides = [4, 8, 16, 32, 64]
     anchor_stride = 1
     pixel_mean = np.array([[[102.9801, 115.9465, 122.7717]]])
+    # 每个类别最大训练数据数
+    data_max_size_per_class = 100
 
     # voc data class
     classes = ['_background_', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
@@ -42,7 +44,7 @@ def main():
         batch_size=batch_size,
         is_training=True,
         im_size=image_shape[0],
-        data_max_size_per_class=2,
+        data_max_size_per_class=data_max_size_per_class,
         max_instance=detection_max_instances,
         image_mean=pixel_mean,
         use_mini_mask=use_mini_mask,
