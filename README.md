@@ -101,6 +101,8 @@ labels = "这里是你打标时所有的类别名, txt文本即可, 注意第一
 
 ### 代码细节
 
-- 源码训练voc2012数据: /official_mask_rcnn/samples/voc/voc2012.py
-- 复现代码: /mrcnn
-- 数据生成: /data/generate_voc_segment_data.py
+- tf2复现代码: /mrcnn
+- tf2复现代码训练coco数据: /mrcnn/train_coco.py
+- tf2复现代码训练voc2012数据: /mrcnn/train_voc.py  
+- tf1官方代码: /official_mask_rcnn/mrcnn
+- tf1官方代码训练voc2012数据: /official_mask_rcnn/samples/voc/voc2012.py
