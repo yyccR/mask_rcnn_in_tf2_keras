@@ -49,7 +49,7 @@ tensorboard --host 0.0.0.0 --logdir ./logs/ --port 9013 --samples_per_plugin=ima
 <img src="https://raw.githubusercontent.com/yyccR/Pictures/master/mask_rcnn/images.png" width="800" height="437"/>
 
 
-### 测试`Voc2012`
+### 测试
 1. 构建模型
 ```python
 # 预测时候batch_size设置为1
@@ -97,7 +97,7 @@ labels = "这里是你打标时所有的类别名, txt文本即可, 注意第一
 
 3. 执行`data/labelme2coco.py`脚本会在`output_dir`生成对应的json文件和图片
 4. 修改`train_coco.py`文件中`classes`和`coco_annotation_file`, 注意`classes`第一个需要是'\_background\_', 每个类名单独一行
-5. 开始训练, `python3 train_coco.py`
+5. 修改`train_coco.py`里面的data_size=-1, 表示训练全部数据, 然后开始训练 `python3 train_coco.py`
 
 ### 代码细节
 
