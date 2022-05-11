@@ -30,7 +30,7 @@ def main():
     anchor_stride = 1
     pixel_mean = np.array([[[102.9801, 115.9465, 122.7717]]])
     # 这里指定要训练的数据个数, 调试用, -1表示训练全部
-    data_size = 10
+    data_size = -1
 
     # coco data class, CoCo类别有缺失的补none
     # classes = ['_background_', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
